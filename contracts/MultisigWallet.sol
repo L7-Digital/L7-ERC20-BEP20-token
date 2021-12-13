@@ -4,11 +4,13 @@ pragma solidity 0.8.7;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
-contract MultiSigWallet is Ownable {
+contract MultisigWallet is Ownable {
     using SafeERC20 for IERC20;
+    using Address for address;
 
-     /*
+    /*
      *  Constants
      */
     //uint constant public MAX_OWNER_COUNT = 50;
@@ -16,14 +18,17 @@ contract MultiSigWallet is Ownable {
     /*
      *  Storage
      */
-    // transactionId => compressed Transaction txData
-    mapping (bytes32 =>  uint256) private transactions;
-    // transactionId => address destination
-    mapping (bytes32 =>  address payable) private destinations;
-    mapping (bytes32 => mapping (address => bool)) public confirmations;
+    struct TransactionData {
+        uint256 amount;
+        address erc20Address;
+        address payable destination;
+        bool isExecuted;
+        mapping(address => bool) confirmations;
+    }
+    mapping (bytes32 => TransactionData) private transactions;
+
     mapping (address => bool) public isOwner;   
     uint public threshold;
-
     address[] private owners;
 
     /*
@@ -40,22 +45,22 @@ contract MultiSigWallet is Ownable {
     }
 
     modifier transactionExists(bytes32 transactionId) {
-        require(transactions[transactionId] != 0);
+        require(transactions[transactionId].amount != 0 || transactions[transactionId].destination != address(0));
         _;
     }
 
     modifier confirmed(bytes32 transactionId, address owner) {
-        require(confirmations[transactionId][owner]);
+        require(transactions[transactionId].confirmations[owner]);
         _;
     }
 
     modifier notConfirmed(bytes32 transactionId, address owner) {
-        require(!confirmations[transactionId][owner]);
+        require(!transactions[transactionId].confirmations[owner]);
         _;
     }
 
     modifier notExecuted(bytes32 transactionId) {
-        require(!(uint8(transactions[transactionId]) == 1));
+        require(!transactions[transactionId].isExecuted);
         _;
     }
 
@@ -64,13 +69,17 @@ contract MultiSigWallet is Ownable {
         _;
     }
 
-    constructor() Ownable(){
+    modifier isNotSentFromContract(address _address) {
+        require(!_address.isContract());
+        _;
     }
+
+    constructor() Ownable() { }
     
     // Function to deposit Ether into this contract.
     // Call this function along with some Ether.
     // The balance of this contract will be automatically updated.
-    fallback() external payable {}
+    fallback() external payable { }
 
     receive() external payable { }
 
@@ -81,6 +90,7 @@ contract MultiSigWallet is Ownable {
         onlyOwner
         ownerDoesNotExist(owner)
         notNull(owner)
+        isNotSentFromContract(owner)
     {
         isOwner[owner] = true;
         owners.push(owner);
@@ -156,8 +166,7 @@ contract MultiSigWallet is Ownable {
         transactionExists(transactionId)
         notConfirmed(transactionId, msg.sender)
     {
-        confirmations[transactionId][msg.sender] = true;
-        executeTransaction(transactionId);
+        transactions[transactionId].confirmations[msg.sender] = true;
     }
 
     /// @dev Allows an owner to revoke a confirmation for a transaction.
@@ -168,39 +177,35 @@ contract MultiSigWallet is Ownable {
         confirmed(transactionId, msg.sender)
         notExecuted(transactionId)
     {
-        confirmations[transactionId][msg.sender] = false;
+        transactions[transactionId].confirmations[msg.sender] = false;
     }
 
     /// @dev Allows anyone to execute a confirmed transaction.
     /// @param transactionId Transaction ID.
     function executeTransaction(bytes32 transactionId)
-        internal
+        external
         ownerExists(msg.sender)
         confirmed(transactionId, msg.sender)
         notExecuted(transactionId)
     {
-        if (isConfirmed(transactionId)) {
-            uint256 _txData = transactions[transactionId];
-       
-            if(uint8(_txData) == 0){
-                _txData = _txData | uint8(1);
+        if (hasEnoughConfirmations(transactionId)) {
+            TransactionData storage currTransaction = transactions[transactionId];
+
+            if(!external_submit(currTransaction.erc20Address, currTransaction.destination, currTransaction.amount)){
+                currTransaction.isExecuted = true;
             }
-            
-            uint256 _amount = uint256(uint88(_txData >> 8));
-            address _erc20Address =  address(uint160(_txData >> 96));
-            if(!external_submit(_erc20Address, destinations[transactionId], _amount)){
-                _txData = _txData ^ uint8(1);
-            }
-            transactions[transactionId] = _txData;
         }
     }
 
-    function external_submit(address erc20Address, address payable destination, uint256 amount) internal returns (bool result) {
+    function external_submit(address erc20Address, address payable destination, uint256 amount) 
+        internal 
+        returns (bool result) 
+    {
         if(erc20Address == address(0)){
-            // transfer ETH
+            // transfer ETH, throws error on fail
             destination.transfer(amount);
-        }else{
-            // transfer ERC20
+        } else {
+            // transfer ERC20, throws error on fail
             IERC20(erc20Address).safeTransfer(destination, amount);
         }
         result = true;
@@ -215,14 +220,11 @@ contract MultiSigWallet is Ownable {
         returns (bytes32 transactionId)
     {
         transactionId = keccak256(abi.encodePacked(erc20Address, destination, code, amount));
-        if(transactions[transactionId] == 0){
-            destinations[transactionId] = destination;
-
-            uint256 _txData = uint256(uint160(erc20Address)); //160 bits
-            _txData = (_txData << 88) | amount;
-            _txData = (_txData << 8) | uint8(0);
-       
-            transactions[transactionId] = _txData; 
+        if (transactions[transactionId].amount == 0) {
+            TransactionData storage newTransaction = transactions[transactionId];
+            newTransaction.erc20Address = erc20Address;
+            newTransaction.destination = destination;
+            newTransaction.amount = amount;
         }
     }
 
@@ -235,13 +237,13 @@ contract MultiSigWallet is Ownable {
         return owners;
     }
 
-    function isConfirmed(bytes32 transactionId)
+    function hasEnoughConfirmations(bytes32 transactionId)
         public view
         returns (bool result)
     {
         uint count = 0;
         for (uint i = 0; i < owners.length; i++) {
-            if (confirmations[transactionId][owners[i]])
+            if (transactions[transactionId].confirmations[owners[i]])
                 count += 1;
             if (count == threshold)
                 result = true;
@@ -251,14 +253,15 @@ contract MultiSigWallet is Ownable {
 
     function transactionInfoOf(address _erc20Address, address payable _destination, uint256 _code, uint256 _amount)
         external view
-    returns (bytes32 transactionId, address erc20Address, address payable destination, uint256 code, uint256 amount, bool executed)
+        returns (bytes32 transactionId, address erc20Address, address payable destination, uint256 code, uint256 amount, bool isExecuted)
     {
-        transactionId = keccak256(abi.encodePacked(erc20Address, destination, code, amount));
-        destination = destinations[transactionId];
+        transactionId = keccak256(abi.encodePacked(_erc20Address, _destination, _code, _amount));
+        TransactionData storage currTransaction = transactions[transactionId];
+
+        destination = currTransaction.destination;
         code = _code;
-        uint256 _txData = transactions[transactionId];
-        executed = uint8(_txData) == 1;
-        amount = uint256(uint88(_txData>>8));
-        erc20Address =  address(uint160(_txData>>96));
+        isExecuted = currTransaction.isExecuted;
+        amount = currTransaction.amount;
+        erc20Address = currTransaction.erc20Address;
     }
 }
