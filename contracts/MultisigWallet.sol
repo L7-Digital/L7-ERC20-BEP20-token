@@ -35,32 +35,32 @@ contract MultisigWallet is Ownable {
     *  Modifiers
     */
     modifier ownerDoesNotExist(address owner) {
-        require(!isOwner[owner]);
+        require(!isOwner[owner], "Wallet: already owner");
         _;
     }
 
     modifier ownerExists(address owner) {
-        require(isOwner[owner], "MultiSigWallet: not valid Owner");
+        require(isOwner[owner], "Wallet: not valid Owner");
         _;
     }
 
     modifier transactionExists(bytes32 transactionId) {
-        require(transactions[transactionId].amount != 0 || transactions[transactionId].destination != address(0));
+        require(transactions[transactionId].amount != 0 || transactions[transactionId].destination != address(0), "Wallet: Tx not exist");
         _;
     }
 
     modifier confirmed(bytes32 transactionId, address owner) {
-        require(transactions[transactionId].confirmations[owner]);
+        require(transactions[transactionId].confirmations[owner], "Wallet: Tx is not confirmed");
         _;
     }
 
     modifier notConfirmed(bytes32 transactionId, address owner) {
-        require(!transactions[transactionId].confirmations[owner]);
+        require(!transactions[transactionId].confirmations[owner], "Wallet: Tx already confirmed");
         _;
     }
 
     modifier notExecuted(bytes32 transactionId) {
-        require(!transactions[transactionId].isExecuted);
+        require(!transactions[transactionId].isExecuted, "Wallet: Tx already executed");
         _;
     }
 
@@ -74,7 +74,7 @@ contract MultisigWallet is Ownable {
         _;
     }
 
-    constructor() Ownable() { }
+    constructor() Ownable() payable { }
     
     // Function to deposit Ether into this contract.
     // Call this function along with some Ether.
@@ -253,7 +253,8 @@ contract MultisigWallet is Ownable {
     }
 
     function transactionInfoOf(address _erc20Address, address payable _destination, uint256 _code, uint256 _amount)
-        external view
+        external 
+        view
         returns (bytes32 transactionId, address erc20Address, address payable destination, uint256 code, uint256 amount, bool isExecuted)
     {
         transactionId = keccak256(abi.encodePacked(_erc20Address, _destination, _code, _amount));
@@ -264,5 +265,13 @@ contract MultisigWallet is Ownable {
         isExecuted = currTransaction.isExecuted;
         amount = currTransaction.amount;
         erc20Address = currTransaction.erc20Address;
+    }
+
+    function getBalance() 
+        public
+        view 
+        returns (uint256) 
+    {
+        return address(this).balance;
     }
 }
