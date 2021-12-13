@@ -1,19 +1,24 @@
 {
   "scripts": {
-    "flat:L7ERC721": "truffle-flattener ./contracts/tokens/ERC721/L7ERC721LazyMint.sol > ./publish/L7ERC721LazyMint.flat.sol",
-    "flat:L7ERC1155": "truffle-flattener ./contracts/tokens/ERC1155/L7ERC721LazyMint.sol > ./publish/L7ERC1155LazyMint.flat.sol",
-    "test": "truffle test && exit 1"
+    "compile": "npx hardhat compile",
+    "compile:force": "npx hardhat compile --force",
+    "deploy": "npx hardhat run scripts/1_deployMultisig.js",
+    "test": "npx hardhat test"
   },
   "dependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.3",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^4.4.0",
-    "@truffle/hdwallet-provider": "^1.4.1",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
+    "dotenv": "^10.0.0",
     "eip-712": "^0.4.3",
-    "ethers": "^5.4.1",
+    "ethereum-waffle": "^2.2.0",
+    "ethers": "^5.5.2",
+    "hardhat": "^0.0.7",
+    "hardhat-contract-sizer": "^2.1.1",
+    "hardhat-gas-reporter": "^1.0.6",
     "mocha": "^9.0.2",
-    "truffle-contract-size": "^2.0.1",
-    "truffle-flattener": "^1.5.0",
     "web3": "^1.4.0"
   }
 }
