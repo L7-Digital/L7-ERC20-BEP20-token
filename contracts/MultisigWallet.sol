@@ -188,13 +188,14 @@ contract MultisigWallet is Ownable {
         confirmed(transactionId, msg.sender)
         notExecuted(transactionId)
     {
-        if (hasEnoughConfirmations(transactionId)) {
-            TransactionData storage currTransaction = transactions[transactionId];
+        require(hasEnoughConfirmations(transactionId), "Wallet: Not enough confirmations.");
+        
+        TransactionData storage currTransaction = transactions[transactionId];
 
-            if(!external_submit(currTransaction.erc20Address, currTransaction.destination, currTransaction.amount)){
-                currTransaction.isExecuted = true;
-            }
+        if(external_submit(currTransaction.erc20Address, currTransaction.destination, currTransaction.amount)){
+            currTransaction.isExecuted = true;
         }
+        
     }
 
     function external_submit(address erc20Address, address payable destination, uint256 amount) 
