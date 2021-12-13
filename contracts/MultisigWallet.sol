@@ -20,6 +20,7 @@ contract MultisigWallet is Ownable {
      */
     struct TransactionData {
         uint256 amount;
+        uint256 code;
         address erc20Address;
         address payable destination;
         bool isExecuted;
@@ -226,6 +227,7 @@ contract MultisigWallet is Ownable {
             newTransaction.erc20Address = erc20Address;
             newTransaction.destination = destination;
             newTransaction.amount = amount;
+            newTransaction.code = code;
         }
     }
 
@@ -258,13 +260,13 @@ contract MultisigWallet is Ownable {
         returns (bytes32 transactionId, address erc20Address, address payable destination, uint256 code, uint256 amount, bool isExecuted)
     {
         transactionId = keccak256(abi.encodePacked(_erc20Address, _destination, _code, _amount));
+        
         TransactionData storage currTransaction = transactions[transactionId];
-
-        destination = currTransaction.destination;
-        code = _code;
-        isExecuted = currTransaction.isExecuted;
-        amount = currTransaction.amount;
         erc20Address = currTransaction.erc20Address;
+        destination = currTransaction.destination;
+        code = currTransaction.code;
+        amount = currTransaction.amount;
+        isExecuted = currTransaction.isExecuted;
     }
 
     function getBalance() 
