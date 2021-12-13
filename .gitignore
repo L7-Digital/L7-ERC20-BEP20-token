@@ -1,0 +1,4 @@
+﻿node_modules
+contracts/tokens/ERC1155/artifacts
+contracts/tokens/ERC721/artifacts
+package-lock.json

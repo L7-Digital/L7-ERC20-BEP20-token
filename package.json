@@ -1,0 +1,19 @@
+{
+  "scripts": {
+    "flat:L7ERC721": "truffle-flattener ./contracts/tokens/ERC721/L7ERC721LazyMint.sol > ./publish/L7ERC721LazyMint.flat.sol",
+    "flat:L7ERC1155": "truffle-flattener ./contracts/tokens/ERC1155/L7ERC721LazyMint.sol > ./publish/L7ERC1155LazyMint.flat.sol",
+    "test": "truffle test && exit 1"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.4.0",
+    "@truffle/hdwallet-provider": "^1.4.1",
+    "chai": "^4.3.4",
+    "chai-as-promised": "^7.1.1",
+    "eip-712": "^0.4.3",
+    "ethers": "^5.4.1",
+    "mocha": "^9.0.2",
+    "truffle-contract-size": "^2.0.1",
+    "truffle-flattener": "^1.5.0",
+    "web3": "^1.4.0"
+  }
+}
