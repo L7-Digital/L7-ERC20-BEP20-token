@@ -11,11 +11,6 @@ contract MultisigWallet is Ownable {
     using Address for address;
 
     /*
-     *  Constants
-     */
-    //uint constant public MAX_OWNER_COUNT = 50;
-
-    /*
      *  Storage
      */
     struct TransactionData {
@@ -168,6 +163,7 @@ contract MultisigWallet is Ownable {
         notConfirmed(transactionId, msg.sender)
     {
         transactions[transactionId].confirmations[msg.sender] = true;
+        executeTransaction(transactionId);
     }
 
     /// @dev Allows an owner to revoke a confirmation for a transaction.
@@ -184,19 +180,17 @@ contract MultisigWallet is Ownable {
     /// @dev Allows anyone to execute a confirmed transaction.
     /// @param transactionId Transaction ID.
     function executeTransaction(bytes32 transactionId)
-        external
+        internal
         ownerExists(msg.sender)
         confirmed(transactionId, msg.sender)
         notExecuted(transactionId)
-    {
-        require(hasEnoughConfirmations(transactionId), "Wallet: Not enough confirmations.");
-        
-        TransactionData storage currTransaction = transactions[transactionId];
-
-        if(external_submit(currTransaction.erc20Address, currTransaction.destination, currTransaction.amount)){
-            currTransaction.isExecuted = true;
+    {        
+        if (hasEnoughConfirmations(transactionId)) {
+            TransactionData storage currTransaction = transactions[transactionId];
+            if(external_submit(currTransaction.erc20Address, currTransaction.destination, currTransaction.amount)){
+                currTransaction.isExecuted = true;
+            }
         }
-        
     }
 
     function external_submit(address erc20Address, address payable destination, uint256 amount) 
@@ -248,9 +242,10 @@ contract MultisigWallet is Ownable {
         for (uint i = 0; i < owners.length; i++) {
             if (transactions[transactionId].confirmations[owners[i]])
                 count += 1;
-            if (count == threshold)
+            if (count == threshold){
                 result = true;
                 break;
+            }                
         }
     }
 
