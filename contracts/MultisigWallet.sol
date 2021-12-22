@@ -246,11 +246,13 @@ contract MultisigWallet is Ownable {
     {
         uint count = 0;
         for (uint i = 0; i < owners.length; i++) {
-            if (transactions[transactionId].confirmations[owners[i]])
+            if (transactions[transactionId].confirmations[owners[i]]) {
                 count += 1;
-            if (count == threshold)
+            }
+            if (count == threshold) {
                 result = true;
                 break;
+            }
         }
     }
 
