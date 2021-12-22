@@ -29,3 +29,8 @@ $ npx hardhat run scripts/1_deployMultisig.js
 ```
 
 To choose other network to deploy the project, modify the `NETWORK` field in the `.env`(./.env) file
+
+4. Flatten the contracts
+```shell
+$ npx hardhat flat --output ./flat.sol
+```
