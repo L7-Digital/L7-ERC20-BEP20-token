@@ -1,6 +1,9 @@
 ﻿node_modules
-artifacts
 cache
 package-lock.json
 .env
 
+artifacts/@openzeppelin
+artifacts/build-info
+contracts/artifacts
+contracts/interfaces/artifacts
