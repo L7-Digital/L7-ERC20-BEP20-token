@@ -28,7 +28,7 @@ contract L7InGameExchange is Ownable {
         require(amount > 0, "L7InGameExchange: Invalid Amount");
         require(erc20 != address(0), "L7InGameExchange: Invalid ERC20 Address");
         IL7Token token = IL7Token(erc20);
-        token.burnFrom(address(this), amount);
+        token.burn(amount);
         emit ExchangeBurn(msg.sender, erc20, amount, block.timestamp);
     }
 }
