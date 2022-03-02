@@ -1,0 +1,65 @@
+{
+	"compiler": {
+		"version": "0.8.7+commit.e28d00a7"
+	},
+	"language": "Solidity",
+	"output": {
+		"abi": [
+			{
+				"inputs": [
+					{
+						"internalType": "int256",
+						"name": "a",
+						"type": "int256"
+					}
+				],
+				"name": "divide",
+				"outputs": [
+					{
+						"internalType": "int256",
+						"name": "c",
+						"type": "int256"
+					}
+				],
+				"stateMutability": "pure",
+				"type": "function"
+			}
+		],
+		"devdoc": {
+			"kind": "dev",
+			"methods": {},
+			"version": 1
+		},
+		"userdoc": {
+			"kind": "user",
+			"methods": {},
+			"version": 1
+		}
+	},
+	"settings": {
+		"compilationTarget": {
+			"contracts/tokens/test.sol": "Test"
+		},
+		"evmVersion": "london",
+		"libraries": {},
+		"metadata": {
+			"bytecodeHash": "ipfs"
+		},
+		"optimizer": {
+			"enabled": false,
+			"runs": 200
+		},
+		"remappings": []
+	},
+	"sources": {
+		"contracts/tokens/test.sol": {
+			"keccak256": "0xebb0d4243d10bfae90c74f722c11662c29fcc0dec2e017331aa7f0760fc960df",
+			"license": "UNLICENSED",
+			"urls": [
+				"bzz-raw://85bdb161fd2ab0685a9a659833f8140c9ef953cb415625b3b18daa464f610d4a",
+				"dweb:/ipfs/QmSEdrWJnL1ZrdphpnbnTeMgmBbSTPZ6MBL1yk6uS5U35S"
+			]
+		}
+	},
+	"version": 1
+}
